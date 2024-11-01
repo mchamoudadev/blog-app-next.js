@@ -1,51 +1,66 @@
 // hooks/auth.ts
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { authApi } from "@/lib/api/auth";
-import type { LoginCredentials, RegisterCredentials } from "@/lib/api/types";
+import { useAuthStore } from "@/stores/authStore";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-// Get current user
 export function useUser() {
+  const queryClient = useQueryClient();
+
   return useQuery({
     queryKey: ["user"],
     queryFn: authApi.getUser,
-    retry: false,
-    staleTime: Infinity,
+    retry: 1,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+    throwOnError: (error: any) => {
+      if (error?.status === 401) {
+        useAuthStore.getState().reset();
+        queryClient.clear();
+      }
+      return false;
+    }
   });
 }
 
-// Login
 export function useLogin() {
   const queryClient = useQueryClient();
+  const { setAuthenticated } = useAuthStore();
   
   return useMutation({
     mutationFn: authApi.login,
     onSuccess: (data) => {
-      queryClient.setQueryData(["user"], data.user);
+      setAuthenticated(true);
+      if (data.user) {
+        queryClient.setQueryData(["user"], data.user);
+      }
     },
   });
 }
 
-// Register
+export function useLogout() {
+  const queryClient = useQueryClient();
+  const { reset } = useAuthStore();
+  
+  return useMutation({
+    mutationFn: async () => {
+      await authApi.logout();
+      reset();
+      queryClient.clear();
+    },
+  });
+}
+
 export function useRegister() {
   const queryClient = useQueryClient();
+  const { setAuthenticated } = useAuthStore();
   
   return useMutation({
     mutationFn: authApi.register,
     onSuccess: (data) => {
-      queryClient.setQueryData(["user"], data.user);
-    },
-  });
-}
-
-// Logout
-export function useLogout() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: authApi.logout,
-    onSuccess: () => {
-      queryClient.clear(); // Clear all queries from cache
-      queryClient.removeQueries(); // Remove all queries
+      setAuthenticated(true);
+      if (data.user) {
+        queryClient.setQueryData(["user"], data.user);
+      }
     },
   });
 }

@@ -5,11 +5,11 @@ import type {
   LoginCredentials, 
   RegisterCredentials, 
   User, 
-  AuthResponse 
+  AuthResponse
 } from "./types";
 
 export const authApi = {
-  login: async (credentials: LoginCredentials) => {
+  login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     const response = await api.post<ApiResponse<AuthResponse>>(
       "/auth/login",
       credentials
@@ -17,7 +17,7 @@ export const authApi = {
     return response.data.data;
   },
 
-  register: async (credentials: RegisterCredentials) => {
+  register: async (credentials: RegisterCredentials): Promise<AuthResponse> => {
     const response = await api.post<ApiResponse<AuthResponse>>(
       "/auth/register",
       credentials
@@ -30,13 +30,16 @@ export const authApi = {
     return response.data;
   },
 
-  getUser: async () => {
-    const response = await api.get<ApiResponse<User>>("/auth/me");
-    return response.data.data;
+  getUser: async (): Promise<User> => {
+    try {
+      const response = await api.get<ApiResponse<User>>("/auth/me");
+      return response.data.data;
+    } catch (error) {
+      throw error;
+    }
   },
 
-  // This is called automatically by the axios interceptor
-  refresh: async () => {
+  refresh: async (): Promise<AuthResponse> => {
     const response = await api.post<ApiResponse<AuthResponse>>("/auth/refresh");
     return response.data.data;
   },
