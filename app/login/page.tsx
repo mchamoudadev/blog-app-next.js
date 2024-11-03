@@ -44,7 +44,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      const returnUrl = new URLSearchParams(window.location.search).get('from') || '/dashboard';
+      const returnUrl = new URLSearchParams(window.location.search).get('from') || '/';
       router.push(returnUrl);
     }
   }, [isAuthenticated, router]);

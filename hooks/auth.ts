@@ -2,16 +2,19 @@
 import { authApi } from "@/lib/api/auth";
 import { useAuthStore } from "@/stores/authStore";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { usePathname } from "next/navigation";
 
 export function useUser() {
   const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuthStore();
+  const pathname = usePathname();
+  const isAuthPage = ['/login', '/register'].includes(pathname);
 
   return useQuery({
     queryKey: ["user"],
     queryFn: authApi.getUser,
-    retry: 1,
-    refetchOnMount: true,
-    refetchOnWindowFocus: false,
+    enabled: isAuthenticated && !isAuthPage,
+    retry: false,
     throwOnError: (error: any) => {
       if (error?.status === 401) {
         useAuthStore.getState().reset();

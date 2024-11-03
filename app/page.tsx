@@ -1,32 +1,16 @@
 "use client";
 
-import { useLogout, useUser } from "@/hooks/auth";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, LogOut, User } from "lucide-react";
-import { toast } from "sonner";
+import { usePosts } from "@/hooks/post";
+import { Loader2, Plus } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/authStore";
-import { useRouter } from "next/navigation";
+import { formatDate } from "@/lib/utils";
 
 export default function Home() {
-  const router = useRouter();
+  const { data: posts, isLoading } = usePosts();
   const { isAuthenticated } = useAuthStore();
-  const { data: user, isLoading, isError } = useUser();
-  const logout = useLogout();
-
-  const handleLogout = async () => {
-    try {
-      await logout.mutateAsync();
-      router.push('/login');
-      toast.success("Logged out successfully");
-    } catch (error) {
-      toast.error("Failed to logout");
-    }
-  };
-
-  if (!isAuthenticated) {
-    return null;
-  }
 
   if (isLoading) {
     return (
@@ -36,58 +20,53 @@ export default function Home() {
     );
   }
 
-  if (isError) {
-    return (
-      <div className="text-center text-red-500">
-        Error loading user data. Please try logging in again.
-      </div>
-    );
-  }
-
   return (
-    <div className="max-w-2xl mx-auto">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-6 w-6" />
-            Profile Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {user && (
-            <>
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground">Email</p>
-                <p className="text-lg">{user.email}</p>
-              </div>
-              {user.name && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground">Name</p>
-                  <p className="text-lg">{user.name}</p>
-                </div>
-              )}
-              <Button 
-                variant="destructive" 
-                onClick={handleLogout}
-                disabled={logout.isPending}
-                className="mt-4"
-              >
-                {logout.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Logging out...
-                  </>
-                ) : (
-                  <>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Logout
-                  </>
-                )}
-              </Button>
-            </>
-          )}
-        </CardContent>
-      </Card>
+    <div className="container max-w-4xl py-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Posts</h1>
+        {isAuthenticated && (
+          <Link href="/create">
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Post
+            </Button>
+          </Link>
+        )}
+      </div>
+
+      {posts?.length === 0 ? (
+        <Card>
+          <CardContent className="py-8">
+            <p className="text-center text-muted-foreground">
+              No posts yet. Be the first to create one!
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {posts?.map((post) => (
+            <Link key={post.id} href={`/posts/${post.id}`}>
+              <Card className="hover:bg-muted/50 transition-colors">
+                <CardHeader>
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="space-y-2">
+                      <CardTitle>{post.title}</CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        by {post.user?.email} • {formatDate(post.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground line-clamp-2">
+                    {post.content}
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

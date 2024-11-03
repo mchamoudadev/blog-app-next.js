@@ -8,6 +8,9 @@ import {
 import { API_URL } from "./constants";
 import { useAuthStore } from "@/stores/authStore";
 
+// Auth endpoints that shouldn't trigger refresh
+const AUTH_ENDPOINTS = ['/login', '/register', '/refresh', '/logout'];
+
 // Create base API instance
 const api = axios.create({
   baseURL: API_URL,
@@ -20,6 +23,14 @@ const api = axios.create({
 
 // Single refresh promise to prevent multiple calls
 let refreshPromise: Promise<any> | null = null;
+
+// Handle auth failure
+const handleAuthFailure = () => {
+  useAuthStore.getState().reset();
+  if (typeof window !== 'undefined') {
+    window.location.href = '/login';
+  }
+};
 
 // Refresh token function
 const refreshTokens = async () => {
@@ -39,7 +50,10 @@ const refreshTokens = async () => {
     }
     const { data } = await refreshPromise;
     return data;
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.response?.status === 401) {
+      handleAuthFailure();
+    }
     throw error;
   } finally {
     refreshPromise = null;
@@ -52,7 +66,16 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as ExtendedAxiosRequestConfig;
     
-    if (!originalRequest || error.response?.status !== 401 || originalRequest._isRetry) {
+    if (!originalRequest) {
+      return Promise.reject(error);
+    }
+
+    // Skip refresh for auth endpoints
+    const isAuthEndpoint = AUTH_ENDPOINTS.some(endpoint => 
+      originalRequest.url?.includes(endpoint)
+    );
+
+    if (isAuthEndpoint || originalRequest._isRetry || error.response?.status !== 401) {
       return Promise.reject(error);
     }
 
@@ -61,10 +84,6 @@ api.interceptors.response.use(
       await refreshTokens();
       return api(originalRequest);
     } catch (refreshError) {
-      useAuthStore.getState().reset();
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
-      }
       return Promise.reject(refreshError);
     }
   }

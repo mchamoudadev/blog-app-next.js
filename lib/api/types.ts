@@ -64,3 +64,19 @@ export interface AuthResponse {
   accessToken?: string;  // Only for mobile clients
   refreshToken?: string; // Only for mobile clients
 }
+
+// Add these interfaces to your existing types
+export interface Post {
+  id: string;
+  title: string;
+  content: string;
+  userId: string;
+  user?: User;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreatePostInput {
+  title: string;
+  content: string;
+}

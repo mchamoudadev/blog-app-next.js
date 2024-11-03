@@ -38,7 +38,6 @@ export const authApi = {
       throw error;
     }
   },
-
   refresh: async (): Promise<AuthResponse> => {
     const response = await api.post<ApiResponse<AuthResponse>>("/auth/refresh");
     return response.data.data;

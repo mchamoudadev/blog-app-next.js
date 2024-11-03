@@ -4,15 +4,17 @@ export function middleware(request: NextRequest) {
     const authPages = ["/login", "/register"];
     const isAuthPage = authPages.some(page => request.nextUrl.pathname.startsWith(page));
   
-    // Check both access_token and refresh_token
-    const hasTokens = request.cookies.has('access_token') || request.cookies.has('refresh_token');
+    // Check if tokens exist and have actual values
+    const accessToken = request.cookies.get('access_token')?.value;
+    const refreshToken = request.cookies.get('refresh_token')?.value;
+    const hasValidTokens = Boolean(accessToken || refreshToken);
   
     // Prevent redirect loops by checking the current URL
-    if (isAuthPage && hasTokens) {
+    if (isAuthPage && hasValidTokens) {
       return NextResponse.redirect(new URL("/", request.url));
     }
   
-    if (!isAuthPage && !hasTokens) {
+    if (!isAuthPage && !hasValidTokens) {
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("from", request.nextUrl.pathname);
       return NextResponse.redirect(loginUrl);
