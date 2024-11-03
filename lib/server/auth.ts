@@ -1,75 +1,34 @@
 import { cookies } from 'next/headers';
 import { API_URL } from '../api/constants';
 import { User } from '../api/types';
+import { cache } from 'react';
 
-interface AuthError extends Error {
-  statusCode?: number;
-  code?: string;
-}
-
-export async function getUser() {
+// Cache the fetch function to dedupe requests
+const fetchFromAPI = cache(async (endpoint: string) => {
   const cookieStore = await cookies();
-  const refreshToken = cookieStore.get('refresh_token');
-  const accessToken = cookieStore.get('access_token');
-  
-  // If no tokens at all, return null instead of throwing
-  if (!refreshToken?.value && !accessToken?.value) {
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    headers: {
+      Cookie: cookieStore.toString(),
+      'x-client-type': 'web',
+    },
+    credentials: 'include',
+    // Disable caching for auth requests
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
     return null;
   }
-  
+
+  return response.json();
+});
+
+// Cache the getUser function
+export const getUser = cache(async () => {
   try {
-    const response = await fetch(`${API_URL}/auth/me`, {
-      headers: {
-        Cookie: cookieStore.toString(),
-        'x-client-type': 'web',
-      },
-      credentials: 'include',
-      cache: 'no-store',
-    });
-
-    if (!response.ok) {
-      if (response.status === 401 && refreshToken?.value) {
-        try {
-          const refreshResponse = await fetch(`${API_URL}/auth/refresh`, {
-            method: 'POST',
-            headers: {
-              Cookie: cookieStore.toString(),
-              'x-client-type': 'web',
-            },
-            credentials: 'include',
-          });
-
-          // If refresh fails, return null instead of throwing
-          if (!refreshResponse.ok) {
-            return null;
-          }
-
-          // Retry the original request
-          const retryResponse = await fetch(`${API_URL}/auth/me`, {
-            headers: {
-              Cookie: cookieStore.toString(),
-              'x-client-type': 'web',
-            },
-            credentials: 'include',
-            cache: 'no-store',
-          });
-
-          if (!retryResponse.ok) {
-            return null;
-          }
-
-          const data = await retryResponse.json();
-          return data.data as User;
-        } catch (error) {
-          return null;
-        }
-      }
-      return null;
-    }
-
-    const data = await response.json();
-    return data.data as User;
+    const data = await fetchFromAPI('/auth/me');
+    return data?.data as User | null;
   } catch (error) {
     return null;
   }
-} 
+}); 

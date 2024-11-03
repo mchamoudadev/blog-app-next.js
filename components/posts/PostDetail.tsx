@@ -17,7 +17,7 @@ export default function PostDetail({ id }: { id: string }) {
         <CardHeader>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Link href="/">
+              <Link href="/dashboard">
                 <Button variant="outline" size="sm">
                   Back to Posts
                 </Button>

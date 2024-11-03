@@ -3,7 +3,7 @@ import { API_URL } from '../api/constants';
 import { Post } from '../api/types';
 
 export async function getPosts() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   
   const response = await fetch(`${API_URL}/posts`, {
     headers: {
@@ -23,7 +23,7 @@ export async function getPosts() {
 }
 
 export async function getPost(id: string) {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   
   const response = await fetch(`${API_URL}/posts/${id}`, {
     headers: {
