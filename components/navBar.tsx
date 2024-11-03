@@ -1,17 +1,16 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useLogout, useUser } from "@/hooks/auth";
-import { useAuthStore } from "@/stores/authStore";
+import { useLogout } from "@/hooks/auth";
 import { Loader2, LogOut } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useAuthStore } from "@/stores/authStore";
 
 export default function Navbar() {
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
-  const { data: user, isLoading } = useUser();
+  const { user, isAuthenticated } = useAuthStore();
   const logout = useLogout();
 
   const handleLogout = async () => {
@@ -38,15 +37,9 @@ export default function Navbar() {
                 <Link href="/create" className="hover:text-primary">
                   Write
                 </Link>
-                
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <span className="text-sm text-muted-foreground">
-                    {user?.email}
-                  </span>
-                )}
-
+                <span className="text-sm text-muted-foreground">
+                  {user?.email}
+                </span>
                 <Button 
                   variant="ghost" 
                   size="sm"

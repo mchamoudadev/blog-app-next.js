@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/themeProvider";
 import { Toaster } from "@/components/ui/sonner";
-import QueryProvider from "@/providers/queryProvider";
 import Navbar from "@/components/navBar";
+import QueryProvider from "@/providers/queryProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
